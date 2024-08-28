@@ -1,152 +1,207 @@
-import UserModel from '../models/user.model.js'
-import ProductModel from '../models/products.model.js'
-import ProductServices from '../services/productServices.js'
-import EmailServices from '../services/emailServices.js'
-import logger from '../utils/logger.js'
-const productServices = new ProductServices()
-const emailServices = new EmailServices()
+import ProductService from "../services/product.service.js";
+import EmailManager from "../services/email.service.js";
+const emailManager = new EmailManager;
+
+
+
 
 class ProductController {
+    constructor() {
+        this.productService = new ProductService();
+
+        // Binding methods to the current instance to preserve 'this' context (Esta sección fue agregada por recomendación de ChatGPT:)
+        this.getProducts = this.getProducts.bind(this);
+        this.getProductById = this.getProductById.bind(this);
+        this.addProduct = this.addProduct.bind(this);
+        this.updateProduct = this.updateProduct.bind(this);
+        this.deleteProduct = this.deleteProduct.bind(this);
+    }
+
     async getProducts(req, res) {
         try {
-            let { limit, page, sort, query: filterQuery } = req.query
+            const products = await this.productService.getProducts(req.query);
 
-            // se convierten a números los valores de limit y page
-            limit = parseInt(limit) || 10 // Si no se especifica limit, por defecto será 10
-            page = parseInt(page) || 1 // Si no se especifica page, por defecto será 1
+            if (products.docs.length > 0) {
+                products.prevLink = products.hasPrevPage ? `/api/products/?limit=${products.limit}&page=${products.prevPage}` : null;
+                products.nextLink = products.hasNextPage ? `/api/products/?limit=${products.limit}&page=${products.nextPage}` : null;
 
-            // Objeto para opciones de ordenamiento
-            let sortOptions = {}
-            if (sort) {
-                sortOptions.price = (sort === 'asc') ? 1 : -1 // Se Ordena por precio ascendente o descendente según el valor de 'sort'
+                res.json({
+                    success: true,
+                    message: "Listado de productos:",
+                    payload: products
+                });
+            } else {
+                res.status(404).json({
+                    success: false,
+                    message: "No hay productos para mostrar"
+                });
             }
-
-            // Objeto para opciones de filtrado
-            const filterOptions = {}
-            if (filterQuery) {
-                filterOptions.category = filterQuery // Se Filtra por categoría si se proporciona el parámetro 'query'
-            }
-
-            const productsList = await ProductModel.paginate(filterOptions, { limit, page, sort: sortOptions })
-
-            const productsFinalResult = productsList.docs.map(product => {
-                const { id, ...rest } = product.toObject()
-                return rest
-            })
-
-            // Se construyen los enlaces de previo y siguiente
-            const prevLink = productsList.hasPrevPage ? `/api/products?limit=${limit}&page=${productsList.prevPage}&sort=${sort}&query=${filterQuery}` : null
-            const nextLink = productsList.hasNextPage ? `/api/products?limit=${limit}&page=${productsList.nextPage}&sort=${sort}&query=${filterQuery}` : null
-
-            // Se construye el objeto de respuesta según el formato requerido
-            const response = {
-                status: 'success',
-                payload: productsFinalResult,
-                totalDocs: productsList.totalDocs,
-                totalPages: productsList.totalPages,
-                prevPage: productsList.prevPage,
-                nextPage: productsList.nextPage,
-                page: productsList.page,
-                hasPrevPage: productsList.hasPrevPage,
-                hasNextPage: productsList.hasNextPage,
-                prevLink,
-                nextLink
-            }
-            // Se envia la respuesta
-            res.json(response)
         } catch (error) {
-            logger.error("Error getting the products", error)
-            res.status(500).json({ message: 'Internal Server Error', error: error })
+            res.status(500).json({
+                success: false,
+                message: "Fallo al obtener listado de productos",
+                error: error.message
+            });
+            req.logger.error("Fallo al obtener listado de producto");
+
         }
     }
 
     async getProductById(req, res) {
         try {
-            const productId = req.params.pid
-            const product = await productServices.getProductById(productId)
-
-            if (!product) {
-                return res.status(404).json({ message: `A product with the id ${productId} was not found` })
+            const product = await this.productService.getProductById(req.params.pid);
+            if (product) {
+                res.json({
+                    success: true,
+                    message: "Producto encontrado con éxito",
+                    payload: product
+                });
+            } else {
+                res.status(404).json({
+                    success: false,
+                    message: "Producto no encontrado"
+                });
             }
-
-            res.json({ message: "Product found:", product })
         } catch (error) {
-            logger.error("Error getting the product by id.")
-            res.status(500).json({ message: 'Internal Server Error', error: error })
+            res.status(500).json({
+                success: false,
+                message: "Fallo al obtener producto",
+                error: error.message
+            });
+            req.logger.error("Fallo al obtener producto");
+
         }
     }
 
     async addProduct(req, res) {
         try {
-            const newProduct = req.body
-            const requiredFields = ["title", "description", "category", "price", "code", "stock", "status"]
-            const missingFields = requiredFields.filter(field => !(field in newProduct) || (typeof newProduct[field] === "string" && newProduct[field].trim() === ""))
+            const nuevoProducto = {
+                ...req.body,
+                price: parseFloat(req.body.price.replace(",", "."))
+            };
 
-            if (missingFields.length > 0) {
-                return res.status(400).json({ message: "All fields are mandatory." })
+            // Solo actualizar el thumbnail si se subió un archivo
+            if (req.file) {
+                productToUpdate.thumbnail = `/img/${req.file.filename}`;
             }
 
-            const products = await productServices.getProducts()
-            const existingProduct = products.find(product => product.code === newProduct.code)
+            const newProduct = await this.productService.addProduct(nuevoProducto);
+            res.json({
+                success: true,
+                message: "Producto agregado con éxito",
+                id: newProduct._id
+            });
 
-            if (existingProduct) {
-                return res.status(400).json({ message: "A product with that code already exists." })
+            if (req.io) {
+                req.io.emit("UpdateNeeded", true);
+            } else {
+                req.logger.error("Socket.IO no está definido en req")
             }
-
-            await productServices.addProduct(newProduct)
-            res.status(200).json({ message: "Product added successfully:", newProduct })
         } catch (error) {
-            logger.error("Error adding the product.")
-            res.status(500).json({ message: 'Internal Server Error', error: error })
+            if (error.name === 'ValidationError') {
+                res.status(400).json({
+                    success: false,
+                    message: "Error de validación: " + error.message
+                });
+            } else {
+                req.logger.error("Fallo al agregar producto");
+                if (!res.headersSent) {
+                    res.status(500).json({
+                        success: false,
+                        message: "Fallo al agregar producto",
+                        error: error.message
+                    });
+                }
+            }
         }
+
     }
 
     async updateProduct(req, res) {
         try {
-            const productId = req.params.pid
-            const updatedProduct = req.body
+            const productToUpdate = {
+                ...req.body,
+                price: parseFloat(req.body.price.replace(",", "."))
+            };
 
-            // Se verifica si el producto existe en el array de productos
-            const productIdToVerify = await productServices.getProductById(productId)
-            if (!productIdToVerify) {
-                return res.status(404).json({ message: `A product with the id ${productId} was not found` })
+            // Solo actualizar el thumbnail si se subió un archivo
+            if (req.file) {
+                productToUpdate.thumbnail = `/img/${req.file.filename}`;
             }
 
-            await productServices.updateProduct(productId, updatedProduct)
-            return res.json({ message: "Product updated successfully:", updatedProduct })
+            const updatedProduct = await this.productService.updateProduct(req.params.pid, productToUpdate);
+            if (updatedProduct) {
+                res.json({
+                    success: true,
+                    message: "Producto actualizado con éxito",
+                    id: req.params.pid
+                });
+                try {
+                    req.io.emit("UpdateNeeded", true);
+                } catch (emitError) {
+                    req.logger.error("Error emitting update event", emitError);
+                }
+            } else {
+                res.status(404).json({
+                    success: false,
+                    message: "No se encontró el producto a actualizar"
+                });
+            }
         } catch (error) {
-            logger.error('Error updating the product:', error)
-            res.status(500).json({ message: 'Internal Server Error', error: error })
+            req.logger.error("Fallo al actualizar producto");
+            if (!res.headersSent) {
+
+                res.status(500).json({
+                    success: false,
+                    message: "Fallo al actualizar producto",
+                    error: error.message
+                });
+            }
         }
     }
 
     async deleteProduct(req, res) {
         try {
-            const productId = req.params.pid
+            const deletedProduct = await this.productService.deleteProduct(req.params.pid);
+            if (deletedProduct) {
 
-            // Se verifica si el producto existe en el array de productos
-            const productIdToVerify = await productServices.getProductById(productId)
-            if (!productIdToVerify) {
-                return res.status(404).json({ message: `A product with the id ${productId} was not found` })
-            }
-
-            // Se verifica si el producto no es del admin, para mandarle un mail al usuario que creó ese producto
-            if (productIdToVerify.owner !== 'admin') {
-                const user = await UserModel.findOne({ email: productIdToVerify.owner })
-                if (!user) {
-                    return res.status(400).json({ message: `No user found that matches the owner of this product: ${productIdToVerify.title}` })
+                // Debo notificar al owner (si es un usuario premium)
+                if (deletedProduct.owner && deletedProduct.owner !== 'admin') {
+                    emailManager.sendNotificationToUser(deletedProduct.owner,`
+                        Queríamos informarte que el siguiente producto fue eliminado de la tienda:<br>
+                        Titulo:  ${deletedProduct.title} <br>
+                        Descripción: ${deletedProduct.description} <br>
+                        Código: ${deletedProduct.code} <br>
+                        Precio: ${deletedProduct.price} <br>
+                    `);
                 }
-                emailServices.sendProductUserDeletionEmail(user.email, user.first_name, user.last_name, productIdToVerify.title)
+
+
+                // Devuelvo el resultado de la operación
+                res.status(200).json({
+                    success: true,
+                    message: "Producto eliminado con éxito",
+                    id: req.params.pid
+                });
+                req.io.emit("UpdateNeeded", true);
+            } else {
+                res.status(404).json({
+                    success: false,
+                    message: "Producto no encontrado"
+                });
             }
-
-            // Se elimina el producto
-            const productToDelete = await productServices.deleteProduct(productId)
-
-            return res.json({ message: 'Product deleted successfully:', productToDelete })
         } catch (error) {
-            logger.error('Error deleting the product:', error)
-            res.status(500).json({ message: 'Internal Server Error', error: error })
+            res.status(500).json({
+                success: false,
+                message: "Fallo al eliminar producto",
+                error: error.message
+            });
+            req.logger.error("Fallo al eliminar producto");
+
         }
     }
+
+
 }
-export default ProductController
+
+export default ProductController;

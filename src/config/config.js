@@ -1,25 +1,21 @@
-import dotenv from 'dotenv'
-import program from '../utils/commander.js'
-
-const { mode } = program.opts()
+import dotenv from "dotenv";
 
 dotenv.config({
-    path: mode === 'production' ? './.env.production' : './.env.development',
+    path: "./.env"
 })
 
 const configObject = {
-    node_env: process.env.NODE_ENV,
-    app_port: process.env.APP_PORT,
-    app_host: process.env.APP_HOST,
     mongo_url: process.env.MONGO_URL,
-    email_user: process.env.EMAIL_USER,
-    email_pass: process.env.EMAIL_PASS,
-    secret_cookie_token: process.env.SECRET_COOKIE_TOKEN,
-    admin_username: process.env.ADMIN_USERNAME,
-    admin_email: process.env.ADMIN_EMAIL,
-    admin_password: process.env.ADMIN_PASSWORD,
-    admin_data: process.env.ADMIN_DATA,
-    admin_role: process.env.ADMIN_ROLE,
+    github_client_id: process.env.GITHUB_CLIENT_ID,
+    github_client_secret: process.env.GITHUB_CLIENT_SECRET,
+    node_env: process.env.NODE_ENV,
+    port: process.env.PORT,
+    base_url: process.env.BASE_URL,
+    gmail_app_passwd: process.env.GMAIL_APPLICATION_PASS
 }
 
 export default configObject;
+
+
+
+

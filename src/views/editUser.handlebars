@@ -1,0 +1,113 @@
+<form id="edit-form">
+    <div class="upload__container">
+        <h2>Editar Usuario</h2><br>
+        <div class="upload__field">
+            <label for="first_name">First Name:</label>
+            <input type="text" name="first_name" placeholder="Nombre" value="{{user.first_name}}" required>
+        </div>
+        <div class="upload__field">
+            <label for="last_name">Last Name:</label>
+            <input type="text" name="last_name" placeholder="Apellido" value="{{user.last_name}}" required>
+        </div>
+        <div class="upload__field">            
+            <label for="email">Email:</label>
+            <input type="email" name="email" placeholder="Email" value="{{user.email}}" required>
+        </div>
+        <div class="upload__field">
+            <label for="age">Age:</label>
+            <input type="text" name="age" placeholder="Age" value="{{user.age}}" required>
+        </div>
+        <div class="login-form-button">
+            <button type="submit"><i class="fas fa-save"></i> Save</button>
+            <a href="#" onclick="resetPassword('{{user.email}}'); return false;" title="Reset Password" class="btn-danger">
+                <i class="fas fa-key"></i> Reset User Password
+            </a>
+        </div>
+
+    </div>
+</form>                           
+
+<script>
+document.getElementById('edit-form').addEventListener('submit', function(event) {
+    event.preventDefault(); // Previene que el formulario se envíe de la forma tradicional
+    
+    // Obtener los valores del formulario
+    const firstName = event.target.first_name.value;
+    const lastName = event.target.last_name.value;
+    const email = event.target.email.value;
+
+    // Crear el payload
+    const payload = {
+        first_name: firstName,
+        last_name: lastName,
+        email: email
+    };
+
+    
+    const userId = '{{user._id}}'; 
+
+    // Hacer la solicitud PUT al endpoint
+    fetch(`/api/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            throw new Error('Error al actualizar el usuario');
+        }
+    })
+    .then(data => {
+        // Manejo de la respuesta exitosa
+        Swal.fire({
+            title: '¡Éxito!',
+            text: 'El usuario ha sido actualizado correctamente.',
+            icon: 'success',
+            confirmButtonText: 'OK'
+        })
+    })
+    .catch(error => {
+        // Manejo de errores
+        Swal.fire({
+            title: 'Error',
+            text: error.message,
+            icon: 'error',
+            confirmButtonText: 'Cerrar'
+        });
+    });
+});
+
+function resetPassword(email) {
+    fetch('/api/users/requestPasswordReset', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: email })
+    })
+    .then(response => {
+        if (response.ok) {
+            Swal.fire({
+                title: '¡Éxito!',
+                text: 'Se ha enviado un correo para restablecer la contraseña.',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+        } else {
+            throw new Error('Error al solicitar el restablecimiento de la contraseña');
+        }
+    })
+    .catch(error => {
+        Swal.fire({
+            title: 'Error',
+            text: error.message,
+            icon: 'error',
+            confirmButtonText: 'Cerrar'
+        });
+    });
+}
+</script>

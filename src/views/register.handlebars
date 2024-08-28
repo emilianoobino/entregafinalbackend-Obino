@@ -1,64 +1,94 @@
-{{>header}}
-<section class="section_register">
-    <div class="register_container">
-        <div class="registerTitle_container">
-            <h1>Create your iStore Account</h1>
+<form id="register-form">
+    <div class="upload__container">
+        <h2>Registro de nuevo usuario</h2> <br>
+
+        <div class="upload__container--title">
+            <input type="text" name="first_name" placeholder="Nombre" required>
         </div>
-        <form id="registerForm" action="/api/users/register" method="post">
-            <div class="input_container_total">
-                <span class="input_error" id="errors_username"></span>
-                <div class="input_container">
-                    <input class="input" id="username" type="text" name="username" placeholder="" autoComplete="off">
-                    <span class="input_placeholder">Username</span>
-                </div>
-            </div>
-            <div class="input_container_total">
-                <span class="input_error" id="errors_first_name"></span>
-                <div class="input_container">
-                    <input class="input" id="first_name" type="text" name="first_name" placeholder=""
-                        autoComplete="off">
-                    <span class="input_placeholder">First Name</span>
-                </div>
-            </div>
-            <div class="input_container_total">
-                <span class="input_error" id="errors_last_name"></span>
-                <div class="input_container">
-                    <input class="input" id="last_name" type="text" name="last_name" placeholder="" autoComplete="off">
-                    <span class="input_placeholder">Last Name</span>
-                </div>
-            </div>
-            <div class="input_container_total">
-                <span class="input_error" id="errors_email"></span>
-                <div class="input_container">
-                    <input class="input" id="email" type="email" name="email" placeholder="" autoComplete="off">
-                    <span class="input_placeholder">Email Address</span>
-                </div>
-            </div>
-            <div class="input_container_total">
-                <span class="input_error" id="errors_password"></span>
-                <div class="input_container">
-                    <input class="input" id="password" type="password" name="password" placeholder=""
-                        autoComplete="off">
-                    <span class="input_placeholder">Password</span>
-                    <div class="show_password_icon" id="showPasswordIcon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                            <path
-                                d="M 12 5 c -7.633 0 -9.927 6.617 -9.948 6.684 L 1.946 12 l 0.105 0.316 C 2.073 12.383 4.367 19 12 19 s 9.927 -6.617 9.948 -6.684 l 0.106 -0.316 l -0.105 -0.316 C 21.927 11.617 19.633 5 12 5 Z m 0 11 c -2.206 0 -4 -1.794 -4 -4 s 1.794 -4 4 -4 s 4 1.794 4 4 s -1.794 4 -4 4 Z" />
-                            <path
-                                d="M 12 10 c -1.084 0 -2 0.916 -2 2 s 0.916 2 2 2 s 2 -0.916 2 -2 s -0.916 -2 -2 -2 Z" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-            <div class="input_container_total">
-                <span class="input_error" id="errors_age"></span>
-                <div class="input_container">
-                    <input class="input" id="age" type="number" name="age" placeholder="" autoComplete="off">
-                    <span class="input_placeholder">Age</span>
-                </div>
-            </div>
-            <button type="submit">Register</button>
-        </form>
+        <div class="upload__container--title">
+            <input type="text" name="last_name" placeholder="Apellido" required>
+        </div>
+        <div class="upload__container--title">
+            <input type="email" name="email" placeholder="Email" required>
+        </div>
+        <div class="upload__container--title">
+            <input type="text" name="age" placeholder="Edad" required>
+        </div>
+        <div class="upload__container--title">
+            <input type="password" name="password" placeholder="Password" required>
+        </div>
+        <div class="upload__container--title">
+            <input type="password" name="password2" placeholder="Repetir Password" required>
+        </div>
+
+        <div class="login-form-button">
+            <button type="submit">Registrar</button>
+        </div>
     </div>
-</section>
-<script src="/js/login-register.js"></script>
+</form>
+
+
+
+
+<script>
+    document.getElementById('register-form').addEventListener('submit', function (event) {
+        event.preventDefault(); // Prevenir que el formulario se envíe de la manera tradicional
+
+        // Obtener los valores de los campos del formulario
+        const formData = new FormData(event.target);
+        const userData = {
+            first_name: formData.get('first_name'),
+            last_name: formData.get('last_name'),
+            email: formData.get('email'),
+            password: formData.get('password'),
+            age: formData.get('age')
+        };
+
+        // Verificar si las contraseñas coinciden antes de enviar
+        if (userData.password !== formData.get('password2')) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Las contraseñas no coinciden',
+            });
+            return;
+        }
+        // Enviar los datos al endpoint
+        const url = '/api/users{{#if session.login}}/admin{{/if}}/register';
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(userData)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || 'Error en el registro');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Éxito',
+                    text: 'Usuario registrado con éxito',
+                }).then(() => {
+                    urlRedirect = "{{#if session.login}}/users{{else}}/api/users/profile{{/if}}";
+                    //console.log(`Redirigiendo a ${urlRedirect}`)
+                    
+                    window.location.href = urlRedirect;
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: `Error al registrar usuario: ${error.message}`,
+                });
+            });
+    });
+</script>

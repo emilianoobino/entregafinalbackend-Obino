@@ -1,53 +1,45 @@
-import winston from "winston"
-import configObject from "../config/config.js" // Variables de entorno
-const { node_env } = configObject
+import winston from "winston";
 
-// Ejemplo configurando nuestros propios niveles
-const levels = {
-    level: {
-        fatal: 0,
-        error: 1,
-        warning: 2,
-        info: 3,
-        http: 4,
-        debug: 5
-    },
-    colors: {
-        fatal: "red",
-        error: "yellow",
-        warning: "magenta",
-        info: "green",
-        http: "blue",
-        debug: "white"
-    }
+// traemos del configObject: node_env
+import configObject from "../config/config.js";
+
+const niveles = {
+    fatal: 0,
+    error: 1,
+    warning: 2,
+    info: 3,
+    http: 4,
+    debug: 5
 }
 
-// Logger para desarrollo
-const loggerDevelopment = winston.createLogger({
-    levels: levels.level,
+// Logger para desarrollo:
+const loggerDesarrollo = winston.createLogger({
+    levels: niveles,
     transports: [
         new winston.transports.Console({
-            level: "debug",
-            format: winston.format.combine(
-                winston.format.colorize({ colors: levels.colors }),
-                winston.format.simple()
-            )
+            level:"debug"
         })
     ]
 })
 
 // Logger para producción
-const loggerProduction = winston.createLogger({
-    levels: levels.level,
+const loggerProduccion = winston.createLogger({
+    levels: niveles,
     transports: [
         new winston.transports.File({
             filename: "./errors.log",
-            level: "info",
-            format: winston.format.simple()
+            level: "error"
         })
     ]
 })
+// Determinar que logger usar según variable de entorno
+const logger = configObject.node_env === "produccion" ? loggerProduccion : loggerDesarrollo;
 
-// Se determina qué logger utilizamos según el entorno
-const logger = node_env === 'production' ? loggerProduction : loggerDevelopment
-export default logger // Se exporta el logger para utilizarlo en un middlewar
+// Creamos el middleware
+const addLogger = (req,res,next) =>{
+    req.logger = logger;
+    req.logger.http(`${req.method} en ${req.url} - ${new Date().toLocaleTimeString()}`)
+    next();
+}
+
+export default addLogger;

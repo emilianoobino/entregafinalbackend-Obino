@@ -1,83 +1,139 @@
+import passport from "passport";
+import local from "passport-local";
+import GitHubStrategy from "passport-github2";
+import configObject from "./config.js";
 
+// Importo Modelo y funciones de bcrypt
+import UsuarioModel from "../models/usuario.model.js";
+import { createHash, isValidPassword } from "../utils/hashbcrypt.js";
 
-import dotenv from 'dotenv';
+import { CartController } from "../controllers/cart.controller.js";
 
-// Forzando la carga del archivo .env.development para depuración
-dotenv.config({
-    path: './.env.development',
-});
+const cartController = new CartController();
 
-// Imprimir todas las variables de entorno cargadas
-console.log('Loaded Environment Variables:', process.env);
-
-import passport from 'passport';
-import jwt from 'passport-jwt';
-import jwtSign from 'jsonwebtoken';
-import { Strategy as GitHubStrategy } from 'passport-github2';
-import CartServices from '../services/cartServices.js';
-import UserModel from '../models/user.model.js';
-import configObject from '../config/config.js';
-
-const { Strategy: JWTStrategy, ExtractJwt } = jwt;
-const { secret_cookie_token } = configObject;
-
-// Verificar el valor de secret_cookie_token
-console.log('Secret Cookie Token:', secret_cookie_token);
+const LocalStrategy = local.Strategy;
 
 const initializePassport = () => {
-    passport.use('jwt', new JWTStrategy({
-        jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractor]),
-        secretOrKey: secret_cookie_token,
-    }, async (jwt_payload, done) => {
+
+    // Armo mis estrategias de registro y login
+    passport.use("register", new LocalStrategy({
+        // Accedo al objeto request
+        passReqToCallback: true,
+        usernameField: "email"
+    }, async (req, username, password, done) => {
+        const { first_name, last_name, email, age } = req.body;
         try {
-            return done(null, jwt_payload);
+            // Verificamos si ese email ya existe
+            let usuario = await UsuarioModel.findOne({ email });
+
+            if (usuario) {
+                return done(null, false);
+            }
+
+            // Si no existe instancio un carrito y creo un registro nuevo
+            const newCart = await cartController.addCart();
+
+            let nuevoUsuario = {
+                first_name,
+                last_name,
+                email,
+                age,
+                password: createHash(password),
+                avatar_url: "/img/generic_avatar.jpeg",
+                cart: newCart.payload._id,
+                role: "user"
+            }
+            let resultado = await UsuarioModel.create(nuevoUsuario);
+            return done(null, resultado);
+            // Si todo está bien mandamos done con el usuario generado.
+            
+        } catch (error) {
+            console.log(error);
+            return done(error);
+        }
+    }))
+
+    // Agrego la estrategia de Login
+    passport.use("login", new LocalStrategy({
+        usernameField: "email",
+    }, async (email, password, done) => {
+        try {
+            let usuario = await UsuarioModel.findOne({ email });
+
+            // Si no existe devuelvo error
+            if (!usuario) {
+                console.log("Usuario inexistente");
+                return done(null, false);
+            }
+
+            // Si existe verifico password
+            if (!isValidPassword(password, usuario)) {
+                return done(null, false);
+            }
+
+            return done(null, usuario);
         } catch (error) {
             return done(error);
         }
-    }));
+    }))
 
+
+    //Serializar y deserializar
+    passport.serializeUser((user, done) => {
+        done(null, user._id)
+    })
+
+    passport.deserializeUser(async (user, done) => {
+        let usuario = await UsuarioModel.findById(user._id);
+        done(null, usuario)
+    })
+
+
+
+    // Genero estrategias de auth con GitHub
     passport.use("github", new GitHubStrategy({
-        clientID: "Iv23liDwc5CFBpLdz4i1",
-        clientSecret: "219e89bad45bb1ae352a927f10b4cd6f6714f307",
-        callbackURL: "http://localhost:8080/api/sessions/githubcallback"
+        clientID: configObject.github_client_id,
+        clientSecret: configObject.github_client_secret,
+        callbackURL: `${configObject.base_url}/api/sessions/githubcallback`
     }, async (accessToken, refreshToken, profile, done) => {
-        try {
-            const fullName = profile._json.name;
-            const nameLength = fullName.length;
-            const middleIndex = Math.floor(nameLength / 2);
-            const firstName = fullName.slice(0, middleIndex);
-            const lastName = fullName.slice(middleIndex);
-            const newCart = await cartServices.createCart();
-            let rol = 'User';
-            let connection = new Date();
-            let user = await UserModel.findOne({ email: profile._json.email });
-            if (!user) {
-                let newUser = {
-                    first_name: firstName,
-                    last_name: lastName,
-                    age: profile._json.public_repos,
-                    email: profile._json.email,
-                    password: "",
-                    rol,
-                    cart: newCart._id,
-                    last_connection: connection
-                };
-                user = await UserModel.create(newUser);
-            }
-            const token = jwtSign.sign({ user: user }, secret_cookie_token, { expiresIn: '1h' });
-            return done(null, token);
-        } catch (err) {
-            return done(err, null);
-        }
-    }));
-};
 
-const cookieExtractor = (req) => {
-    let token = null;
-    if (req && req.cookies) {
-        token = req.cookies['cookieAppStore'];
-    }
-    return token;
-};
+        try {
+            const email = (profile.emails && profile.emails[0].value) || profile._json.email;
+            if (!email) {
+                return done(new Error('No se pudo obtener el email del perfil de GitHub.'));
+            }
+
+            let usuario = await UsuarioModel.findOne({ email });
+            if (!usuario) {
+                const response = await cartController.addCart();
+                if (!response.success) {
+                    return done(new Error(response.message));
+                }
+
+                let nuevoUsuario = {
+                    first_name: profile._json.name,
+                    last_name: "",
+                    age: 0,
+                    email,
+                    password: "",
+                    cart: response.cart,
+                    role: "user"
+                }
+
+
+                let resultado = await UsuarioModel.create(nuevoUsuario);
+
+                done(null, resultado);
+            } else {
+                console.log(usuario);
+
+                done(null, usuario);
+            }
+        } catch (error) {
+            console.log(error);
+            return done(error);
+        }
+    }))
+}
 
 export default initializePassport;

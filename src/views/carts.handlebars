@@ -1,0 +1,241 @@
+<br>
+
+<div class="cart-container">
+
+    <div class="cart-list-container">
+        <div class="cart-list-header">
+            <h3>Your cart:</h3>
+
+            <button class="btn clear-btn"> <span class="bi bi-trash"> Empty Cart</span></button>
+        </div>
+
+        {{#each carrito.products}}
+        <div class="horizontal-card">
+            <div class="thumbnail-container">
+                <img class="thumbnail" src="{{this.product.thumbnail}}" alt="Imagen de {{this.product.title}}">
+            </div>
+            <div class="horizontal-card-content">
+                <div class="content-left">
+                    <p><b>{{this.product.title}}</b></p>
+                    <p>precio: pesos {{this.product.price}}</p>
+
+                </div>
+                <div class="content-right">
+                    <p>Subtotal: pesos {{this.subtotal}}</p>
+
+                    <div class="quantity-controls">
+                        <button class="quantity-btn" data-action="decrease" data-index="{{this.product._id}}">-</button>
+                        <input type="number" class="quantity-input" value="{{this.qty}}">
+                        <button class="quantity-btn" data-action="increase" data-index="{{this.product._id}}">+</button>
+                        <div class="btn-group">
+                            <button class="update-btn" title="Update quantity" data-index="{{this.product._id}}">
+                                <span class="bi bi-check-circle"></span>
+                            </button>
+                            <button class="remove-btn" title="Remove from cart" data-index="{{this.product._id}}">
+                                <span class="bi bi-trash"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+
+    <div class="cart-summary">
+        <h3>Cart summary:</h3>
+        <div class="total">
+            <p>Sub Total: pesos <span id="total-provisional" class="total-provisional">€{{provTotal}}</span></p>
+            <p>Shipping: (Enter shipping address)</span></p>
+            <p>Total: pesos <span id="total-provisional" class="total-provisional">€{{provTotal}}</span></p>
+
+
+        </div>
+        <div class="actions">
+             <button class="btn return-btn"><i class="fa fa-shopping-basket" aria-hidden="true"></i> <br> Seguir comprando</button>
+            <button class="btn confirm-btn"><i class="fa fa-credit-card" aria-hidden="true"></i> <br>Confirmar compra</button>
+
+        </div>
+    </div>
+</div>
+
+
+
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const confirmButton = document.querySelector('.confirm-btn');
+        const clearButton = document.querySelector('.clear-btn');
+        const returnButton = document.querySelector('.return-btn');
+        const quantityControls = document.querySelectorAll('.quantity-controls');
+
+        if (quantityControls.length > 0) {
+            quantityControls.forEach(function (control) {
+                const decreaseBtn = control.querySelector('[data-action="decrease"]');
+                const increaseBtn = control.querySelector('[data-action="increase"]');
+                const updateBtn = control.querySelector('.update-btn');
+                const removeBtn = control.querySelector('.remove-btn');
+                const quantityInput = control.querySelector('.quantity-input');
+                const pid = decreaseBtn.getAttribute('data-index');
+
+                decreaseBtn.addEventListener('click', function () {
+                    let currentValue = parseInt(quantityInput.value);
+                    if (currentValue > 1) {
+                        quantityInput.value = currentValue - 1;
+                    }
+                });
+
+                increaseBtn.addEventListener('click', function () {
+                    let currentValue = parseInt(quantityInput.value);
+                    quantityInput.value = currentValue + 1;
+                });
+
+                updateBtn.addEventListener('click', function () {
+                    let updateArray = [{ product: { _id: pid }, qty: parseInt(quantityInput.value) }];
+
+                    let updateUrl = `/api/carts/{{session.user.cart}}`;
+
+                    fetch(updateUrl, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updateArray)
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Hubo un problema al actualizar el carrito.');
+                            }
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Cantidad actualizada',
+                                showConfirmButton: false,
+                                timer: 2000
+                            });
+                        })
+                        .then(() => {
+                            setTimeout(function () { location.reload(); }, 100);
+                        })                        
+                        .catch(error => {
+                            console.error("Error durante la actualización del carrito: ", error);
+                        });
+                });
+
+                removeBtn.addEventListener('click', function () {
+                    let deleteURL = `/api/carts/{{session.user.cart}}/product/${pid}`;
+                    fetch(deleteURL, { method: 'DELETE'})
+                        .then(response => {
+                            if (!response.ok) {
+                                return Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error al eliminar producto del carrito',
+                                    showConfirmButton: false,
+                                    timer: 2000
+                                }).then(() => {
+                                    throw new Error('Hubo un Error al eliminar producto del carrito.');
+                                });
+                            } else {
+                                return Swal.fire({
+                                    title: "Producto eliminado!",
+                                    icon: "success",
+                                    showConfirmButton: false,
+                                    timer: 2000
+                                });
+                            }
+                        })
+                        .then(() => {
+                            setTimeout(function () { location.reload(); }, 100);
+                        })
+
+                });
+            })
+        };
+
+        // Botón Checkout
+        confirmButton.addEventListener('click', function () {
+            var confirmPurchaseUrl = `/api/carts/{{session.user.cart}}/purchase`;
+            const icon = confirmButton.querySelector('i');
+        
+            // Cambia el ícono a un círculo giratorio
+            icon.classList.remove('fa-credit-card');
+            icon.classList.add('fa-spinner', 'fa-spin');
+
+            fetch(confirmPurchaseUrl, {
+                method: 'GET'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        icon.classList.remove('fa-spinner', 'fa-spin');
+                        icon.classList.add('fa-credit-card');
+
+                        return Swal.fire({
+                            icon: 'error',
+                            title: 'Error al generar ticket de compra',
+                            showConfirmButton: false,
+                            timer: 2000
+                        }).then(() => {
+                            throw new Error('Hubo un problema al iniciar el checkout.');
+                        });
+                    } else {
+                        return Swal.fire({
+                            icon: 'success',
+                            title: 'Ticket de compra generado con éxito',
+                            showConfirmButton: false,
+                            timer: 2000
+                        });
+                    }
+                })
+                .then(() => {
+                    setTimeout(function () { location.reload(); }, 100);
+                })
+                .catch(error => {
+                    console.error("Error durante el proceso de checkout: ", error);
+                });
+        });
+
+        // Botón para vaciar el carrito
+        clearButton.addEventListener('click', function () {
+            Swal.fire({
+                title: "¿Estas seguro de querer vaciar el carrito?",
+                confirmButtonText: "Vaciar",
+                showCancelButton: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var cleanupUrl = `/api/carts/{{session.user.cart}}`;
+                    fetch(cleanupUrl, {
+                        method: 'DELETE'
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                return Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error al vaciar el carrito',
+                                    showConfirmButton: false,
+                                    timer: 2000
+                                }).then(() => {
+                                    throw new Error('Hubo un problema al vaciar el carrito.');
+                                });
+                            } else {
+                                return Swal.fire({
+                                    title: "Carrito vaciado!",
+                                    icon: "success",
+                                    showConfirmButton: false,
+                                    timer: 2000
+                                });
+                            }
+                        })
+                        .then(() => {
+                            setTimeout(function () { location.reload(); }, 100);
+                        })
+                        .catch(error => {
+                            console.error('Error durante el vaciado del carrito:', error);
+                        });
+                }
+            });
+        });
+
+        // Botón para volver al home
+        returnButton.addEventListener('click', function () {
+            window.location.href = "/";
+        })
+    });
+</script>

@@ -1,154 +1,97 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import session from 'express-session';
-import MongoStore from 'connect-mongo';
-import passport from 'passport';
-import cookieParser from 'cookie-parser';
-import http from 'http';
-import expressHandlebars from 'express-handlebars';
-import { Server as SocketIOServer } from 'socket.io';
-import morgan from 'morgan';
+import express from "express";
+import exphbs from "express-handlebars";
+import Handlebars from 'handlebars';
+import MongoStore from "connect-mongo";
+import session from "express-session";
+import configObject from "./config/config.js";
+import SocketService from "./services/socket.service.js";
+import './utils/handlebars-helpers.js';
+import "./database.js";
+import passport from "passport";
+import initializePassport from "./config/passport.config.js";
+import errorHandler from "./middlewares/errors/index.js";
+import addLogger from "./utils/logger.js";
+import swaggerJSDoc from 'swagger-jsdoc';
+import swaggerUiExpress from "swagger-ui-express";
+import specs from "./config/swagger.config.js";
 
-import logger from './utils/logger.js';
-import handleError from './middleware/handleError.js';
-import handleLogger from './middleware/handleLogger.js';
-import authMiddleware from './middleware/auth.js';
-import initializePassport from './config/passport.config.js';
-import { swaggerUi, specs } from './config/swagger.config.js';
+import cartsRouter from "./routes/carts.routes.js";
+import productsRouter from "./routes/products.routes.js";
+import viewsRouter from "./routes/views.routes.js";
+import chatRouter from "./routes/chat.routes.js";
+import usersRouter from "./routes/user.routes.js";
+import sessionsRouter from "./routes/session.routes.js";
 
-import UserModel from './models/user.model.js';
-import ProductController from './controllers/product.controller.js';
-import CartController from './controllers/cart.controller.js';
-import UserController from './controllers/user.controller.js';
-import ViewsController from './controllers/views.controller.js';
-import MockingController from './controllers/mocking.controller.js';
-import LoggerController from './controllers/logger.controller.js';
-import SocketManager from './sockets/socketManager.js';
 
-import viewsRouter from './routes/views.router.js';
-import productsRouter from './routes/products.router.js';
-import cartRouter from './routes/cart.router.js';
-import usersRouter from './routes/users.router.js';
-import mockingRouter from './routes/mocking.router.js';
-import loggerRouter from './routes/logger.router.js';
-
-// Variables de entorno
-dotenv.config();
-const { APP_PORT, APP_HOST, MONGO_URL, SECRET_COOKIE_TOKEN, NODE_ENV } = process.env;
-
-// Servidor
+// Defino variables e instancio clases
+const PUERTO = configObject.port;
 const app = express();
-const server = http.createServer(app);
-const PORT = APP_PORT || 8080;
 
-// Instancias de las Clases
-const productController = new ProductController();
-const cartController = new CartController();
-const userController = new UserController();
-const viewsController = new ViewsController();
-const mockingController = new MockingController();
-const loggerController = new LoggerController();
-
-// Middlewares
-app.use(handleLogger);
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(cookieParser());
-app.use(session({
-    secret: SECRET_COOKIE_TOKEN,
-    resave: true,
-    saveUninitialized: true,
-    store: MongoStore.create({
-        mongoUrl: MONGO_URL,
-        ttl: 3600,
-    }),
-}));
-
-initializePassport();
-app.use(passport.initialize());
-app.use(passport.session());
-
-// Logger para solicitudes HTTP
-if (NODE_ENV === 'development') {
-    app.use(morgan('dev'));
-} else {
-    app.use(morgan('combined', { stream: logger.stream }));
-}
-
-// Handlebars
-const hbs = expressHandlebars.create({
-    runtimeOptions: {
-        allowProtoPropertiesByDefault: true,
-        allowProtoMethodsByDefault: true,
-    },
+// Listener - Iniciar el servidor HTTP **antes** de configurar las rutas
+const httpServer = app.listen(PUERTO, () => {
+    console.log(`Escuchando en el http://localhost:${PUERTO}`);
 });
-app.engine('handlebars', hbs.engine);
-app.set('view engine', 'handlebars');
-app.set('views', './src/views');
 
-// Variables globales para el sitio
-app.use(async (req, res, next) => {
-    res.locals.user = req.user;
-    if (req.user && req.user.role !== 'admin') {
-        const user = await UserModel.findOne({ _id: req.user._id }).populate("cart");
-        const usercartProducts = user.cart.products;
-        let productos = 0;
-        for (let y = 0; y < usercartProducts.length; y++) {
-            productos += usercartProducts[y].quantity;
-        }
-        res.locals.cartQuantity = productos;
-    } else {
-        res.locals.cartQuantity = 0;
-    }
-    res.locals.isUserPremium = req.user && req.user.role === 'premium';
-    res.locals.isUserAdmin = req.user && req.user.role === 'admin';
+// Inicializo el servicio de socket.io
+const socketService = new SocketService(httpServer);
+const io = socketService.io;
+
+// Middleware para inyectar io en req (para que pueda estar disponible en toda la app)
+app.use((req, res, next) => {
+    req.io = io;
     next();
 });
 
-// Rutas
-app.use('/', viewsRouter(viewsController));
-app.use('/api/products', productsRouter(productController));
-app.use('/api/carts', cartRouter(cartController));
-app.use('/api/users', usersRouter(userController));
-app.use('/mockingproducts', mockingRouter(mockingController));
-app.use('/loggertest', loggerRouter(loggerController));
-app.use('/apidocs', swaggerUi.serve, swaggerUi.setup(specs));
-app.use(express.static('./src/public'));
-app.use(handleError);
 
-// Configuración de manejo de errores 404
-app.use((req, res, next) => {
-    res.status(404).render('notFound', { title: 'Page Not Found' });
+// Configuro Middlewares
+import auth from "./middlewares/auth.js";
+app.use("/", auth);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static("./src/public/img"));
+app.use(session({
+    secret: "secretCoder",
+    resave: true,
+    saveUninitialized: true,
+    store: MongoStore.create({
+        mongoUrl: configObject.mongo_url,
+        ttl: 3600
+    }),
+    cookie: {secure:false}
+}))
+initializePassport();
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(errorHandler);
+app.use(addLogger);
+
+
+
+
+
+// Configuro express-handlebars
+const hbs = exphbs.create({
+    handlebars: Handlebars
 });
 
-// Configuración de Socket.io
-const io = new SocketIOServer(server);
-new SocketManager(io);
+app.engine("handlebars", hbs.engine);
+app.set("view engine", "handlebars");
+app.set("views", "./src/views");
 
-// Conexión a MongoDB
-mongoose.connect(MONGO_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-    .then(() => logger.info('Connected to MongoDB'))
-    .catch(error => logger.error('MongoDB connection error:', error));
+// Configuro Rutas
+app.use("/", viewsRouter);
+app.use("/chat", chatRouter);
+app.use("/api/products", productsRouter);
+app.use("/api/carts", cartsRouter);
+app.use("/api/users", usersRouter);
+app.use("/api/sessions", sessionsRouter);
+app.use("/apidocs", swaggerUiExpress.serve, swaggerUiExpress.setup(specs));
 
-// Inicialización del servidor HTTP
-server.listen(PORT, APP_HOST, () => {
-    logger.info(`Server is running at http://${APP_HOST}:${PORT}`);
-});
 
-// Manejo de eventos no capturados
-process.on('uncaughtException', (error) => {
-    logger.error('Uncaught Exception:', error);
-    process.exit(1);
-});
 
-process.on('unhandledRejection', (reason, promise) => {
-    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    process.exit(1);
-});
+// Manejador de errores
+app.use(errorHandler);
+
 
 
 

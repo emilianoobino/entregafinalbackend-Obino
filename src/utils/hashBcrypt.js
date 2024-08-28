@@ -1,9 +1,9 @@
-import bcrypt from 'bcrypt'
+import bcrypt from "bcrypt";
 
-// Se aplica el hasheo a la contraseña
-const createHash = (password) => bcrypt.hashSync(password, bcrypt.genSaltSync(10))
 
-// Se comparan las contraseñas, retorna true o false según corresponda.
-const isValidPassword = (password, user) => bcrypt.compareSync(password, user.password)
+// Creo el hash del password
+export const createHash = password => bcrypt.hashSync(password, bcrypt.genSaltSync(10));
 
-export { createHash, isValidPassword }
+
+// Valido si el hash es válido
+export const isValidPassword = (password, user) => bcrypt.compareSync(password, user.password);

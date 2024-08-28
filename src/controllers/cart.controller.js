@@ -1,275 +1,221 @@
-import UserModel from '../models/user.model.js'
-import ProductServices from '../services/productServices.js'
-import CartServices from '../services/cartServices.js'
-import CartUtils from '../utils/cartUtils.js'
-import EmailServices from '../services/emailServices.js'
-import TicketModel from '../models/ticket.model.js'
-import logger from '../utils/logger.js'
+import { CartService } from "../services/cart.service.js";
 
-const productServices = new ProductServices()
-const cartServices = new CartServices()
-const cartUtils = new CartUtils()
-const emailServices = new EmailServices()
+export class CartController {
+    constructor() {
+        this.cartService = new CartService();
 
-class CartController {
-    async createCart(req, res) {
+        // Binding methods to the current instance to preserve 'this' context (Esta sección fue agregada por recomendación de ChatGPT:)
+        this.getCart = this.getCart.bind(this);
+        this.getCartById = this.getCartById.bind(this);
+        this.addCart = this.addCart.bind(this);
+        this.addProductToCart = this.addProductToCart.bind(this);
+        this.removeProductFromCart = this.removeProductFromCart.bind(this);
+        this.changeProducts = this.changeProducts.bind(this);
+        this.emptyCart = this.emptyCart.bind(this);
+        this.confirmPurchase = this.confirmPurchase.bind(this);
+    }
+
+    async getCart(req, res) {
+        const limit = req.query.limit;
         try {
-            const newCart = await cartServices.createCart()
-            res.json({ newCart })
+            const carts = await this.cartService.getCarts(limit);
+            res.status(200).json({
+                success: true,
+                message: "Listado de carritos:",
+                payload: carts
+            });
         } catch (error) {
-            logger.error('Error creating a new cart', error)
-            res.status(500).json({ error: 'Internal Server Error' })
+            res.status(500).json({
+                success: false,
+                message: "Fallo al obtener listado de carritos",
+                error: error.message
+            });
+            req.logger.error("Fallo al finalizar la compra. Error interno del servidor.");
         }
     }
 
     async getCartById(req, res) {
-        const cartId = req.params.cid
+        const cid = req.params.cid;
         try {
-            const cart = await cartServices.getCartById(cartId)
-            if (!cart) {
-                res.status(404).json({ error: `No cart exists with the id ${cartId}` })
+            const cart = await this.cartService.getCartById(cid);
+            res.status(200).json({
+                success: true,
+                message: "Carrito encontrado con éxito",
+                payload: cart
+            });
+        } catch (error) {
+            if (error.statusCode === 404) {
+                res.status(404).json({
+                    success: false,
+                    message: error.message,
+                    payload: cid
+                });
             } else {
-                res.json(cart.products)
+                res.status(500).json({
+                    success: false,
+                    message: "Error del servidor al buscar carrito especificado",
+                    error: error.message
+                });
+                req.logger.error("Error del servidor al buscar carrito especificado", error);
             }
-        } catch (error) {
-            logger.error('Error retrieving the cart', error)
-            res.status(500).json({ error: 'Internal Server Error' })
         }
     }
-    async sacarProductToCart(req, res) {
-        // const user = req.session.user
-        const cartId = req.params.cid
-        const productId = req.params.pid
-        const quantity = req.body.quantity || 1
-        const quantitySpeed = req.body.quantitySpeed
+
+
+    async addCart() {
         try {
-            // Se verifica si el carrito existe en el array de carritos
-            const verifyCartId = await cartServices.getCartById(cartId)
-            if (!verifyCartId) {
-                res.status(404).json({ error: `No cart exists with the id ${cartId}` })
-                return cartId
-            }
-
-            // Se verifica si el producto existe en el array de productos
-            const verifyProductId = await productServices.getProductById(productId)
-            if (!verifyProductId) {
-                res.status(404).json({ error: `A product with the id ${productId} was not found.` })
-                return productId
-            }
-
-            // Se verifica que la cantidad sea un número positivo
-            if (typeof quantity !== 'number' || quantity <= 0) {
-                res.status(404).json({ error: `Quantity (${quantity}) must be a positive number.` })
-                return quantity
-            }
-
-            const carritoActualizado = await cartServices.sacarProductToCart(cartId, productId, quantity, quantitySpeed)
-            res.status(200).json({ carritoActualizado })
+            const cart = await this.cartService.createCart();
+            return {
+                success: true,
+                message: "Carrito creado con éxito.",
+                payload: cart
+            };
         } catch (error) {
-            logger.error('Error adding a product to the cart', error)
-            res.status(500).json({ error: 'Internal Server Error' })
+            console.error("Fallo al crear el carrito, error interno del servidor:", error.message);
+            return {
+                success: false,
+                message: "Fallo al crear el carrito, error interno del servidor.",
+                error: error.message
+            };
         }
     }
+
+
 
     async addProductToCart(req, res) {
-        const cartId = req.params.cid
-        const productId = req.params.pid
-        const quantity = req.body.quantity || 1
-        const quantitySpeed = req.body.quantitySpeed
+        const { cid, pid } = req.params;
+        const buyerEmail = req.session.user.email;
         try {
-            // Se verifica si el carrito existe en el array de carritos
-            const verifyCartId = await cartServices.getCartById(cartId)
-            if (!verifyCartId) {
-                res.status(404).json({ error: `No cart exists with the id ${cartId}` })
-                return cartId
-            }
-
-            // Se verifica si el producto existe en el array de productos
-            const verifyProductId = await productServices.getProductById(productId)
-            if (!verifyProductId) {
-                res.status(404).json({ error: `A product with the id ${productId} was not found.` })
-                return productId
-            }
-
-            // Se verifica que la cantidad sea un número positivo
-            if (typeof quantity !== 'number' || quantity <= 0) {
-                res.status(404).json({ error: `Quantity (${quantity}) must be a positive number.` })
-                return quantity
-            }
-
-            const cart = await cartServices.addProductToCart(cartId, productId, quantity, quantitySpeed)
-            res.status(200).json({ cart })
+            await this.cartService.addProductToCart(cid, pid, buyerEmail);
+            res.status(200).json({
+                success: true,
+                message: "Producto añadido al carrito correctamente",
+                cid: cid,
+                pid: pid
+            });
         } catch (error) {
-            logger.error('Error adding a product to the cart', error)
-            res.status(500).json({ error: 'Internal Server Error' })
+            res.status(500).json({
+                success: false,
+                message: "Error del servidor. Fallo al agregar el producto al carrito",
+                error: error.message
+            });
+            req.logger.error("Error del servidor. Fallo al agregar el producto al carrito");
         }
     }
 
-    async clearCart(req, res) {
-        const cartId = req.params.cid
+    async removeProductFromCart(req, res) {
+        const { cid, pid } = req.params;
         try {
-            // Se verifica si el carrito existe en el array de carritos
-            const verifyCartId = await cartServices.getCartById(cartId)
-            if (!verifyCartId) {
-                res.status(404).json({ error: `No cart exists with the id ${cartId}` })
-                return cartId
-            }
-            // Se llama a la función clearCart del cartManager para eliminar todos los productos del carrito
-            await cartServices.clearCart(cartId)
-            // Se envía una respuesta exitosa al cliente
-            res.status(200).json({ message: 'All products have deleted from cart successfully.' })
+            await this.cartService.removeProductFromCart(cid, pid);
+            res.status(200).json({
+                success: true,
+                message: "Producto eliminado del carrito correctamente",
+                cid: cid,
+                pid: pid
+            });
         } catch (error) {
-            logger.error('Error deleting products from cart', error)
-            res.status(500).json({ error: 'Internal Server Error' })
+
+            if (error.message === "Carrito inexistente" || error.message === "Producto inexistente en el carrito") {
+                res.status(404).json({
+                    success: false,
+                    message: error.message,
+                    cid: cid,
+                    pid: pid
+                });
+            } else {
+                // Para otros errores, devuelve un estado 500
+                res.status(500).json({
+                    success: false,
+                    message: "Fallo al eliminar el producto del carrito",
+                    error: error.message
+                });
+                req.logger.error("Fallo al eliminar el producto del carrito", error);
+            }
         }
     }
 
-    async deleteProductFromCart(req, res) {
-        const cartId = req.params.cid
-        const productId = req.params.pid
+    async emptyCart(req, res) {
+        const cid = req.params.cid;
         try {
-            // Se verifica si el carrito existe en el array de carritos
-            const cart = await cartServices.getCartById(cartId)
-            if (!cart) {
-                return res.status(404).json({ error: `Cart with id ${cartId} not found` })
-            }
-
-            // Se verifica si el producto existe en el array de productos
-            const verifyProductId = await productServices.getProductById(productId)
-            if (!verifyProductId) {
-                res.status(404).json({ error: `A product with the id ${productId} was not found.` })
-                return productId
-            }
-
-            // Se elimina el producto del carrito
-            await cartServices.deleteProductFromCart(cartId, productId)
-            res.json({ message: `Product with id ${productId} was removed from cart with id ${cartId}` })
+            await this.cartService.emptyCart(cid);
+            res.status(200).json({
+                success: true,
+                message: "Carrito vaciado correctamente",
+                cid: cid
+            });
         } catch (error) {
-            logger.error('Error deleting product from cart', error)
-            res.status(500).json({ error: 'Internal Server Error' })
+            if (error.message === "Carrito inexistente") {
+                res.status(404).json({
+                    success: false,
+                    message: error.message,
+                    cid: cid
+                });
+            } else {
+                // Para otros errores, devuelve un estado 500
+                res.status(500).json({
+                    success: false,
+                    message: "Error interno. Fallo al vaciar el carrito",
+                    error: error.message
+                });
+                req.logger.error("Error interno. Fallo al vaciar el carrito", error);
+            }
         }
     }
 
-    async updateProductQuantityInCart(req, res) {
-        const cartId = req.params.cid
-        const productId = req.params.pid
-        const { quantity } = req.body
+    async changeProducts(req, res) {
+        const cid = req.params.cid;
+        const newProducts = req.body;
+
         try {
-            // Se verifica si el carrito existe en el array de carritos
-            const cart = await cartServices.getCartById(cartId)
-            if (!cart) {
-                return res.status(404).json({ error: `Cart with id ${cartId} not found` })
-            }
-
-            // Se verifica si el producto existe en el array de productos
-            const verifyProductId = await productServices.getProductById(productId)
-            if (!verifyProductId) {
-                res.status(404).json({ error: `A product with the id ${productId} was not found.` })
-                return productId
-            }
-
-            // Se verifica si el producto existe en el carrito
-            const productToUpdate = cart.products.find(p => p.product.equals(productId))
-            if (!productToUpdate) {
-                res.status(404).json({ error: `A product with the id ${productId} was not found in the cart.` })
-                return null
-            }
-
-            // Se verifica que la cantidad sea un número positivo
-            if (typeof quantity !== 'number' || quantity <= 0) {
-                res.status(404).json({ error: `Quantity (${quantity}) must be a positive number.` })
-                return quantity
-            }
-
-            // Se actualiza la cantidad del producto en el carrito
-            const updatedCart = await cartServices.updateProductQuantityInCart(cartId, productId, quantity)
-
-            // Se envia una respuesta con el carrito actualizado
-            res.json(updatedCart.products)
+            await this.cartService.changeProducts(cid, newProducts);
+            res.status(200).json({
+                success: true,
+                message: "Carrito actualizado.",
+                cid: cid
+            });
         } catch (error) {
-            logger.error('Error updating product quantity in cart', error)
-            res.status(500).json({ error: 'Internal Server Error' })
+            res.status(500).json({
+                success: false,
+                message: "Fallo al actualizar el carrito. Error interno del servidor.",
+                error: error.message
+            });
+            req.logger.error("Error interno. Fallo al actualizar los productos en el carrito");
         }
     }
 
-    async updateCart(req, res) {
-        const cartId = req.params.cid
-        const newProducts = req.body
+
+
+    async confirmPurchase(req, res) {
+        const cid = req.params.cid;
+        const purchaser = req.session.user.email;
         try {
-            // Se verifica si el carrito existe en el array de carritos
-            const cart = await cartServices.getCartById(cartId)
-            if (!cart) {
-                return res.status(404).json({ error: `Cart with id ${cartId} not found` })
-            }
+            const result = await this.cartService.confirmPurchase(cid, purchaser);
 
-            // Se actualiza el carrito con los nuevos productos
-            const updatedCart = await cartServices.updateCart(cartId, newProducts)
+            // Aviso que hubo cambios en el stock para RealTime Products
+            req.io.emit("UpdateNeeded", true);
+            
+            // Respuesta OK
+            res.status(200).json({
+                success: true,
+                message: "Ticket generado correctamente.",
+                cid: cid,
+                result: result
+            });
 
-            res.json(updatedCart)
         } catch (error) {
-            logger.error('Error updating cart:', error)
-            res.status(500).json({ error: 'Internal Server Error' })
-        }
-    }
+            // Logueo la falla
+            req.logger.error("Fallo al finalizar la compra. Error interno del servidor.",error);
+            
+            // Devuelvo error interno
+            res.status(500).json({
+                success: false,
+                message: "Fallo al finalizar la compra. Error interno del servidor.",
+                error: error.message
+            });
 
-    async completePurchase(req, res) {
-        const cartId = req.params.cid
-        try {
-            // Se obtiene el carrito y sus productos
-            const cart = await cartServices.getCartById(cartId)
-            const products = cart.products
-
-            // Se inicializa un arreglo para almacenar los productos no disponibles
-            const unavailableProducts = []
-
-            // Se inicializa un arreglo para almacenar los productos comprados
-            const purchasedProducts = []
-
-            // Se verifica el stock y actualizar los productos disponibles
-            for (const item of products) {
-                const productId = item.product
-                const product = await productServices.getProductById(productId)
-                if (product.stock >= item.quantity) {
-                    // Si hay suficiente stock, restar la cantidad del producto
-                    product.stock -= item.quantity
-                    await product.save()
-                    // Se Agrega el producto a la lista de productos comprados
-                    purchasedProducts.push({ product: product, quantity: item.quantity })
-                } else {
-                    // Si no hay suficiente stock, agregar el ID del producto al arreglo de no disponibles
-                    unavailableProducts.push(productId)
-                }
-            }
-
-            const userWithCart = await UserModel.findOne({ cart: cartId })
-
-            // Crear un ticket con los datos de la compra
-            const ticket = new TicketModel({
-                code: cartUtils.generateUniqueCode(),
-                purchase_datetime: new Date(),
-                amount: cartUtils.calculateTotal(cart.products),
-                purchaser: userWithCart._id
-            })
-            await ticket.save()
-
-            // Se elimina del carrito los productosue sí se compraron
-            cart.products = cart.products.filter(item => unavailableProducts.some(productId => productId.equals(item.product)))
-
-            // Se guarda el carrito actualizado en la base de datos
-            await cart.save()
-
-            // Se envía un email con los datos de la compra
-            await emailServices.sendPurchaseEmail(userWithCart.email, userWithCart.username, ticket, purchasedProducts)
-
-            // Se renderiza una vista con los datos de compra
-            res.render('ticket', { title: 'Your Order' })
-        } catch (error) {
-            logger.error('Error processing purchase:', error)
-            res.status(500).json({ error: 'Internal server error' })
         }
     }
 }
-export default CartController
 
 
 
