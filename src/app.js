@@ -48,6 +48,7 @@ import auth from "./middlewares/auth.js";
 app.use("/", auth);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static("./src/public"));
 app.use(express.static("./src/public/img"));
 app.use(session({
     secret: "secretCoder",
