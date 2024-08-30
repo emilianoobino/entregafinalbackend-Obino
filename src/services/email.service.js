@@ -50,9 +50,9 @@ class EmailManager {
             productsTable += `
                 <tr>
                     <td>${product.product.description}</td>
-                    <td>${product.qty}</td>
+                    <td>${product.quantity}</td>
                     <td>€ ${product.unitPrice.toFixed(2)}</td>
-                    <td>€ ${(product.qty * product.unitPrice).toFixed(2)}</td>
+                    <td>€ ${(product.quantity * product.unitPrice).toFixed(2)}</td>
 
                 </tr>
             `;

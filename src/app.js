@@ -27,7 +27,6 @@ import sessionsRouter from "./routes/session.routes.js";
 const PUERTO = configObject.port;
 const app = express();
 
-// Listener - Iniciar el servidor HTTP **antes** de configurar las rutas
 const httpServer = app.listen(PUERTO, () => {
     console.log(`Escuchando en el http://localhost:${PUERTO}`);
 });

@@ -1,6 +1,6 @@
 <header class="navbar navbar-expand-lg navbar-dark bg-dark">
     <a class="navbar-brand" href="#">
-      <h1>Tony´s funko</h1> 
+        <h1>Tony´s funko</h1> 
     </a>
 
     {{#if session.login }}
@@ -11,19 +11,19 @@
                     <a class="nav-link" href="/"><i class="fa fa-shopping-basket" aria-hidden="true"></i> Products </a> 
                 </li>
                 <li class="nav-item"> 
-                    <a class="nav-link {{#if (eq session.user.role "user")}} disabled-link{{/if}}" href="/realtimeproducts"><i class="fa fa-eye " aria-hidden="true" ></i> Realtime </a> 
+                    <a class="nav-link {{#if (eq session.user.role "user")}} disabled-link{{/if}}" href="/realtimeproducts"><i class="fa fa-eye" aria-hidden="true"></i> Realtime </a> 
                 </li>
                 <li class="nav-item"> 
-                    <a class="nav-link {{#if (eq session.user.role "user")}} disabled-link{{/if}}" href="/newproduct"> <i class="fa fa-plus-square" aria-hidden="true"></i> Add Product </a> 
+                    <a class="nav-link {{#if (eq session.user.role "user")}} disabled-link{{/if}}" href="/newproduct"><i class="fa fa-plus-square" aria-hidden="true"></i> Add Product </a> 
                 </li>
                 <li class="nav-item"> 
-                    <a class="nav-link {{#unless (eq session.user.role "admin")}} disabled-link{{/unless}}" href="/sales"> <i class="fa fa-pie-chart" aria-hidden="true"></i> Sales </a> 
+                    <a class="nav-link {{#unless (eq session.user.role "admin")}} disabled-link{{/unless}}" href="/sales"><i class="fa fa-pie-chart" aria-hidden="true"></i> Sales </a> 
                 </li>
                 <li class="nav-item"> 
-                    <a class="nav-link {{#unless (eq session.user.role "admin")}} disabled-link{{/unless}}" href="/users"> <i class="fa fa-users"></i> Users </a> 
+                    <a class="nav-link {{#unless (eq session.user.role "admin")}} disabled-link{{/unless}}" href="/users"><i class="fa fa-users"></i> Users </a> 
                 </li>
                 <li class="nav-item"> 
-                    <a class="nav-link {{#if (eq session.user.role "admin")}} disabled-link{{/if}}" href="/chat"> <i class="fa fa-comments"></i> Chat</a> 
+                    <a class="nav-link {{#if (eq session.user.role "admin")}} disabled-link{{/if}}" href="/chat"><i class="fa fa-comments"></i> Chat</a> 
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {{#if (eq session.user.role "admin")}} disabled-link{{/if}}" href="/carts">
@@ -39,23 +39,23 @@
 
             <!-- Avatar y perfil del usuario a la derecha -->
             <ul class="navbar-nav ml-auto">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="display: flex; align-items: center;">
-                        <div class="profile-container" style="position: relative;">
-                           
-                            <span class="icon-overlay">
-                                <i class="fas {{#if (eq session.user.role 'user') }} fa-user {{else}} {{#if (eq session.user.role 'premium')}} fa-star {{else}} fa-cog{{/if}}{{/if}}"></i>
-                            </span>
-                        </div>
-                        <span class="ml-2">{{session.user.first_name}} {{session.user.last_name}}</span>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
-                        <a class="dropdown-item" href="/api/users/profile">
-                            Profile
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="/api/sessions/logout">Logout</a>
+                <li class="nav-item" style="display: flex; align-items: center;">
+                    <div class="profile-container" style="position: relative;">
+                        <span class="icon-overlay">
+                            <i class="fas {{#if (eq session.user.role 'user') }} fa-user {{else}} {{#if (eq session.user.role 'premium')}} fa-star {{else}} fa-cog{{/if}}{{/if}}"></i>
+                        </span>
                     </div>
+                    <span class="ml-2">{{session.user.first_name}} {{session.user.last_name}}</span>
+                </li>
+                <li class="nav-item">
+                    <a class="btn btn-outline-light ml-3" href="/api/users/profile">
+                        Profile
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="btn btn-outline-light ml-2" href="/api/sessions/logout">
+                        Logout
+                    </a>
                 </li>
             </ul>
         </div>

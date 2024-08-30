@@ -4,9 +4,9 @@
 
     <div class="cart-list-container">
         <div class="cart-list-header">
-            <h3>Your cart:</h3>
+            <h3>Tu carrito:</h3>
 
-            <button class="btn clear-btn"> <span class="bi bi-trash"> Empty Cart</span></button>
+            <button class="btn clear-btn"> <span class="bi bi-trash"> Carrito vacio</span></button>
         </div>
 
         {{#each carrito.products}}
@@ -25,7 +25,7 @@
 
                     <div class="quantity-controls">
                         <button class="quantity-btn" data-action="decrease" data-index="{{this.product._id}}">-</button>
-                        <input type="number" class="quantity-input" value="{{this.qty}}">
+                        <input type="number" class="quantity-input" value="{{this.quantity}}">
                         <button class="quantity-btn" data-action="increase" data-index="{{this.product._id}}">+</button>
                         <div class="btn-group">
                             <button class="update-btn" title="Update quantity" data-index="{{this.product._id}}">
@@ -43,10 +43,10 @@
     </div>
 
     <div class="cart-summary">
-        <h3>Cart summary:</h3>
+        <h3>Resumen:</h3>
         <div class="total">
             <p>Sub Total: pesos <span id="total-provisional" class="total-provisional">{{provTotal}}</span></p>
-            <p>Shipping: (Enter shipping address)</span></p>
+            
             <p>Total: pesos <span id="total-provisional" class="total-provisional">{{provTotal}}</span></p>
 
 
@@ -92,7 +92,7 @@
                 });
 
                 updateBtn.addEventListener('click', function () {
-                    let updateArray = [{ product: { _id: pid }, qty: parseInt(quantityInput.value) }];
+                    let updateArray = [{ product: { _id: pid }, quantity: parseInt(quantityInput.value) }];
 
                     let updateUrl = `/api/carts/{{session.user.cart}}`;
 

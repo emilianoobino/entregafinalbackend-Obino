@@ -44,12 +44,12 @@ export class CartService {
         // Busco si el producto ya está en el carrito
         const productIndex = cart.products.findIndex(p => String(p.product) === productId);
 
-        // Defino la cantidad final (si ya está sumo 1 a la qty, si no está lo agrego)
-        let qty = 1;
+        // Defino la cantidad final (si ya está sumo 1 a la quantity, si no está lo agrego)
+        let quantity = 1;
         if (productIndex !== -1) {
-            qty = cart.products[productIndex].qty += qty;
+            cart.products[productIndex].quantity += quantity;
         } else {
-            cart.products.push({ product, qty });
+            cart.products.push({ product, quantity });
         }
 
         cart.markModified('products');
@@ -93,7 +93,7 @@ export class CartService {
 
             if (cartProduct) {
                 // Actualizo la cantidad si el producto está en el carrito
-                cartProduct.qty = updatedProduct.qty;
+                cartProduct.quantity = updatedProduct.quantity;
             } else {
                 // Devuelvo un error si el producto no está en el carrito
                 throw new Error(`Producto ${updatedProduct.product._id} no encontrado en el carrito.`);
@@ -110,7 +110,7 @@ export class CartService {
 
             let total = 0;
             carrito.products.forEach(product => {
-                total += product.qty * product.product.price
+                total += product.quantity * product.product.price
             })
             return total.toFixed(2);
 
@@ -123,8 +123,8 @@ export class CartService {
         try {
             const cart = await this.cartRepository.findById(cartId);
             if (!cart) throw new Error("Carrito inexistente");
-            let qty=cart.products.reduce((total,product) => total+product.qty,0);
-            return qty;
+            let quantity=cart.products.reduce((total,product) => total+product.quantity,0);
+            return quantity;
         } catch (error) {
             return 0;
         }
@@ -141,10 +141,10 @@ export class CartService {
 
         // Validar stock de los items del carrito
         cart.products.forEach(producto => {
-            if (producto.qty <= producto.product.stock) {
+            if (producto.quantity <= producto.product.stock) {
                 producto.unitPrice = producto.product.price;
                 availableProducts.push(producto);
-                ammount += producto.qty * producto.product.price;
+                ammount += producto.quantity * producto.product.price;
             } else {
                 unavailableProducts.push(producto);
             }
@@ -177,7 +177,7 @@ export class CartService {
                 
                 // Actualizo stock del inventario         
                 availableProducts.forEach(async producto => {
-                    producto.product.stock -= producto.qty;
+                    producto.product.stock -= producto.quantity;
                     await this.productRepository.updateById(producto.product._id,  producto.product );
                 })
 

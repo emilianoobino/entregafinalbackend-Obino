@@ -90,7 +90,7 @@ class ViewsController {
 
             // Obtengo el subtotal de cada item
             carrito.products.forEach(item => {
-                item.subtotal = (item.qty * item.product.price).toFixed(2);
+                item.subtotal = (item.quantity * item.product.price).toFixed(2);
             });
             
 

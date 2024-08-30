@@ -18,7 +18,7 @@
     <p>------ o ------</p>
 
     <a href='/api/users/github' class="login-github-link">
-        <img src="/img/github-mark-white.png" alt="GitHub icon" class="icon">
+        <img src="/img/github-mark/github-mark-white.png" alt="GitHub icon" class="icon">
         Login with GitHub
     </a>
 
@@ -28,7 +28,7 @@
 
 <script>
     document.getElementById('login-form').addEventListener('submit', async function(event) {
-        event.preventDefault(); // Evita el comportamiento por defecto de enviar el formulario
+        event.preventDefault();
 
         const form = event.target;
         const formData = new FormData(form);
