@@ -2,6 +2,7 @@ body {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
+    background: #FFB6C1;
 }
 
 header {
@@ -30,7 +31,7 @@ header {
     height: 200px;
     overflow: hidden;
     border-radius: 8px 8px 0 0;
-    /* Opcional: añade bordes redondeados */
+    
 }
 
 .mini__thumbnail {
@@ -60,7 +61,7 @@ nav a {
 
 nav a:hover {
     color: #ffd700;
-    /* Cambia el color al pasar el ratón sobre los enlaces */
+    
 }
 
 #logotipo {
@@ -89,9 +90,9 @@ nav a:hover {
     width: 160px;
     height: 160px;
     border-radius: 50%;
-    /* Para hacerlo circular */
+    
     overflow: hidden;
-    /* Para ocultar cualquier parte de la imagen que se salga del borde circular */
+    
 }
 
 .profile__avatar img {
@@ -157,12 +158,7 @@ nav a:hover {
     border-radius: 5px;
     padding: 10px;
 }
-/* 
-.lista-productos {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-}
+
 
 .lista-productos li {
     padding: 10px;
@@ -360,7 +356,7 @@ nav a:hover {
 }
 
 .button-link:hover {
-    background-color: #0056b3;
+    background-color: black;
 }
 
 .icon {
@@ -418,7 +414,7 @@ nav a:hover {
 .btn {
     display: inline-block;
     padding: 8px 16px;
-    background-color: #c4001a;
+    background-color: #FF1493;
     color: #fff;
     border: none;
     border-radius: 4px;
@@ -429,7 +425,7 @@ nav a:hover {
 }
 
 .btn:hover {
-    background-color: #e60023;
+    background-color: #C71585;
 }
 
 .btn:disabled {
@@ -440,7 +436,7 @@ nav a:hover {
 
 body {
     font-family: Arial, sans-serif;
-    background-color: #f7f7f7;
+    background-color: #FFB6C1;
     margin: 0;
     padding: 0;
 }
@@ -477,7 +473,7 @@ body {
 
 
 .btn {
-    background-color: #4CAF50;
+    background-color: #DB7093;
     color: white;
     padding: 10px 20px;
     border: none;
@@ -487,7 +483,7 @@ body {
 }
 
 .btn:hover {
-    background-color: #45a049;
+    background-color: #FF1493;
 }
 
 
@@ -502,23 +498,19 @@ body {
     align-items: flex-start;
     width: 70%;
     margin: 0 auto;
-    /* Margen automático a izquierda y derecha */
 
 }
 
 /* Container for the list */
 .cart-list-container {
     width: 40%;
-    /* Top and bottom margin */
     padding: 20px 10px 0px 20px;
-    /* Padding to create space on the left */
     flex: 1;
     background-color: #fafafa;
     margin-right: 10px;
     border-radius: 8px;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
     overflow-y: auto;
-    /* Habilita el desplazamiento vertical */
     max-height: 600px;
 }
 
@@ -532,7 +524,7 @@ body {
     border-radius: 8px;
     background-color: #fff;
     overflow: hidden;
-    /* Ensure image stays within the card boundaries */
+    
 }
 
 .cart-list-header {
@@ -546,13 +538,9 @@ body {
     margin: 0;
 }
 
-
-
 .thumbnail-container {
     flex: 0 0 100px;
-    /* Make the container for the image a fixed width */
     height: 100px;
-    /* Same height as width for a square shape */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -561,10 +549,10 @@ body {
 
 .thumbnail {
     width: 100%;
-    /* Ensure the image fits within the container */
+    
     height: 100%;
     object-fit: contain;
-    /* Ensure the image is fully visible within the bounds */
+    
 }
 
 .horizontal-card-content {
@@ -608,7 +596,7 @@ body {
 /* Button */
 .horizontal-card .btn {
     padding: 8px 16px;
-    background-color: #c4001a;
+    background-color: #FF1493;
     color: #fff;
     border: none;
     border-radius: 4px;
@@ -619,7 +607,7 @@ body {
 }
 
 .horizontal-card .btn:hover {
-    background-color: #e60023;
+    background-color: lightpink;
 }
 
 .quantity-controls {
@@ -665,11 +653,11 @@ body {
 
 
 .return-btn {
-    background-color: grey;
+    background-color: black;
 }
 
 .confirm-btn {
-    background-color: #c4001a;
+    background-color: black;
 }
 
 .remove-btn:hover,
@@ -686,7 +674,7 @@ body {
 .cart-summary {
     width: 30%;
     padding: 20px;
-    background-color: rgba(254, 225, 35, 0.451);
+    background-color: lightcoral;
     border-radius: 8px;
     margin-left: 10px;
 }
@@ -882,15 +870,15 @@ body {
 .login-form-button button {
     padding: 10px 20px;
     font-size: 1rem;
-    background-color: #fee123;
-    color: #000;
+    background-color: black;
+    color: whitesmoke;
     border: none;
     border-radius: 5px;
     cursor: pointer;
 }
 
 .login-form-button button:hover {
-    background-color: #4c2b2f;
+    background-color: #FF69B4;
     color: #fff;
 }
 
@@ -907,7 +895,7 @@ body {
 }
 
 .login-github-link:hover {
-    background-color: #0056b3;
+    background-color: #FF69B4;
 }
 
 .login-github-link .icon {
@@ -923,12 +911,12 @@ body {
 }
 
 .login-register-message a {
-    color: #0056b3; /* Color del enlace */
+    color: black;
     text-decoration: none;
 }
 
 .login-register-message a:hover {
-    text-decoration: underline; /* Subrayar el enlace al pasar el mouse */
+    text-decoration: underline;
 }
 
 .button-container {
@@ -1057,7 +1045,7 @@ body {
 }
 
 .access-denied-content .btn-primary {
-    background-color: #007bff;
+    background-color: black;
     color: white;
     padding: 10px 20px;
     border: none;
@@ -1067,7 +1055,7 @@ body {
 }
 
 .access-denied-content .btn-primary:hover {
-    background-color: #0056b3;
+    background-color: black;
 }
 
 
@@ -1103,7 +1091,7 @@ body {
 }
 
 .navbar-nav.ml-auto {
-    margin-left: auto; /* Asegura que los elementos de la derecha se alineen a la derecha */
+    margin-left: auto;
 }
 .dropdown-toggle::after {
     display: none;
@@ -1142,7 +1130,7 @@ body {
 .page-link {
     margin: 0 5px;
     padding: 5px 10px;
-    background-color: #007bff;
+    background-color: black;
     color: white;
     text-decoration: none;
     border-radius: 5px;
@@ -1150,7 +1138,7 @@ body {
 }
 
 .page-link:hover {
-    background-color: #0056b3;
+    background-color: black;
 }
 
 .current-page {

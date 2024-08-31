@@ -41,9 +41,9 @@
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item" style="display: flex; align-items: center;">
                     <div class="profile-container" style="position: relative;">
-                        <span class="icon-overlay">
+                        
                             <i class="fas {{#if (eq session.user.role 'user') }} fa-user {{else}} {{#if (eq session.user.role 'premium')}} fa-star {{else}} fa-cog{{/if}}{{/if}}"></i>
-                        </span>
+                        
                     </div>
                     <span class="ml-2">{{session.user.first_name}} {{session.user.last_name}}</span>
                 </li>
