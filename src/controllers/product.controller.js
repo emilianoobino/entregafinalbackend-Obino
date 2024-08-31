@@ -9,7 +9,7 @@ class ProductController {
     constructor() {
         this.productService = new ProductService();
 
-        // Binding methods to the current instance to preserve 'this' context (Esta sección fue agregada por recomendación de ChatGPT:)
+        
         this.getProducts = this.getProducts.bind(this);
         this.getProductById = this.getProductById.bind(this);
         this.addProduct = this.addProduct.bind(this);

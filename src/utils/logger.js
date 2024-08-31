@@ -33,7 +33,7 @@ const loggerProduccion = winston.createLogger({
     ]
 })
 // Determinar que logger usar según variable de entorno
-const logger = configObject.node_env === "produccion" ? loggerProduccion : loggerDesarrollo;
+const logger = configObject.NODE_ENV === "produccion" ? loggerProduccion : loggerDesarrollo;
 
 // Creamos el middleware
 const addLogger = (req,res,next) =>{

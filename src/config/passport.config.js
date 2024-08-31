@@ -1,7 +1,6 @@
 import passport from "passport";
 import local from "passport-local";
 import GitHubStrategy from "passport-github2";
-import configObject from "./config.js";
 
 // Importo Modelo y funciones de bcrypt
 import UsuarioModel from "../models/usuario.model.js";

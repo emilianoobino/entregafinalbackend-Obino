@@ -97,7 +97,7 @@ class EmailManager {
                 te enviamos el token para que restablezcas tu password 
                 <strong>${token}</strong> </p>
                 <p> Este código expira en 1 hora.</p>
-                <a href="${configObject.base_url}/password"> Restablecer contraseña</a>
+                <a href="${configObject.BASE_URL}/password"> Restablecer contraseña</a>
             `
         }
         await this._sendEmail(mailOptions);

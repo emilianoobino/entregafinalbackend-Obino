@@ -23,7 +23,7 @@ import sessionsRouter from "./routes/session.routes.js";
 
 
 // Defino variables e instancio clases
-const PUERTO = configObject.port;
+const PUERTO = configObject.PORT;
 const app = express();
 
 const httpServer = app.listen(PUERTO, () => {
