@@ -5,7 +5,7 @@ import configObject from "./config.js";
 
 // Importo Modelo y funciones de bcrypt
 import UsuarioModel from "../models/usuario.model.js";
-import { createHash, isValidPassword } from "../utils/hashbcrypt.js";
+import { createHash, isValidPassword } from "../utils/hashBcrypt.js";
 
 import { CartController } from "../controllers/cart.controller.js";
 
