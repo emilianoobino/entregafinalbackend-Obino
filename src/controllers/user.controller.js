@@ -1,7 +1,7 @@
 import passport from "passport";
-import { isValidPassword } from "../utils/hashbcrypt.js";
-import { createHash } from "../utils/hashbcrypt.js";
-import multer from "multer";
+import { isValidPassword } from "../utils/hashBcrypt.js";
+import { createHash } from "../utils/hashBcrypt.js";
+
 
 
 // Tercer practica integradora
@@ -25,10 +25,10 @@ class UserController {
     async registerUser(req, res) {
         try {
             const { first_name, last_name, email, password, age, role, cart, avatar_url } = req.body;
-            //const isAdmin = req.body.isAdmin || false;
+            
 
             // Solo verificar si el usuario ya existe si es un registro de admin
-            //if (isAdmin) {
+            
                 const existingUser = await UsuarioModel.findOne({ email });
                 if (existingUser) {
                     return res.status(400).json({ success: false, message: "El usuario ya existe." });

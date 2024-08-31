@@ -11,7 +11,6 @@ import passport from "passport";
 import initializePassport from "./config/passport.config.js";
 import errorHandler from "./middlewares/errors/index.js";
 import addLogger from "./utils/logger.js";
-import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUiExpress from "swagger-ui-express";
 import specs from "./config/swagger.config.js";
 

@@ -1,16 +1,9 @@
-// Importo express
 import express from "express";
 const router = express.Router();
 
-import multer from "multer";
-//import { uploadProdFile } from "../middlewares/multer.js";
-
-
-// Importo el Controller de Productos
 import ProductController from "../controllers/product.controller.js";
 const productController = new ProductController();
 
-// Importo instancia de Multer para cargar las imagenes de los productos
 import { uploadProdFile } from "../middlewares/multer.js";
 
 // Defino las rutas

@@ -1,8 +1,8 @@
-// Importo express
+
 import express from "express";
 const router = express.Router();
 
-// Importo el Controller de Carritos
+
 import { CartController }  from "../controllers/cart.controller.js";
 const cartController = new CartController();
 

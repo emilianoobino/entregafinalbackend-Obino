@@ -1,5 +1,5 @@
 import ProductosModel from "../models/productos.model.js";
-import CarritosModel from "../models/carritos.model.js";
+
 import TicketsModel from "../models/tickets.model.js";
 import CartRepository from "../repositories/cart.repository.js";
 import CartService from "../services/cart.service.js";

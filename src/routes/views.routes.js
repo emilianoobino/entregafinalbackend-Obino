@@ -4,13 +4,9 @@ import checkUserRole from "../middlewares/rolecheck.js";
 import ViewsController from "../controllers/view.controller.js";
 const viewsController = new ViewsController();
 
-import ProductosModel from "../models/productos.model.js";
-import CarritosModel from "../models/carritos.model.js";
+
 import bodyParser from "body-parser";
-//import multer from "multer";
-import CustomError from "../services/errors/CustomError.js";
-import generateErrorInfo from "../services/errors/info.js";
-import EErrors from "../services/errors/info.js";
+
 import cartCountMiddleware from "../middlewares/cartCount.js";
 
 const router = express.Router();
