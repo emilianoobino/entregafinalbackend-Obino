@@ -53,7 +53,7 @@ app.use(session({
     resave: true,
     saveUninitialized: true,
     store: MongoStore.create({
-        mongoUrl: configObject.mongo_url,
+        mongoUrl: `mongodb+srv://chaval198678:tonyfunko@cluster0.6l6psjf.mongodb.net/e-commerce?retryWrites=true&w=majority&appName=Cluster0`,
         ttl: 3600
     }),
     cookie: {secure:false}
